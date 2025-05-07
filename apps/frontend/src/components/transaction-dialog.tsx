@@ -10,7 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { makeDeposit, makeWithdrawal } from "@/api/transactions";
+import {
+  makeDeposit,
+  makeWithdrawal,
+  updateTransaction,
+} from "@/api/transactions";
 
 interface TransactionDialogProps {
   trigger: React.ReactNode;
@@ -18,6 +22,7 @@ interface TransactionDialogProps {
   initialValue?: string;
   initialType?: "deposit" | "withdrawal";
   userId: string;
+  transactionId?: string;
   onSuccess?: () => void;
 }
 
@@ -27,17 +32,18 @@ export function TransactionDialog({
   initialValue = "0.00",
   initialType = "deposit",
   userId,
+  transactionId,
   onSuccess,
 }: TransactionDialogProps) {
   const [type, setType] = React.useState<"deposit" | "withdrawal">(initialType);
-  const [value, setValue] = React.useState(initialValue);
+  const [value, setValue] = React.useState(formatAsCurrency(initialValue));
   const [error, setError] = React.useState<string | null>(null);
   const translateType = type === "deposit" ? "entrada" : "saída";
   const dialogCloseRef = React.useRef<HTMLButtonElement>(null);
 
   const queryClient = useQueryClient();
 
-  const formatAsCurrency = (val: string) => {
+  function formatAsCurrency(val: string) {
     const digits = val.replace(/\D/g, "");
 
     const numberValue = parseInt(digits) / 100;
@@ -45,7 +51,7 @@ export function TransactionDialog({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-  };
+  }
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formattedValue = formatAsCurrency(e.target.value);
@@ -61,16 +67,8 @@ export function TransactionDialog({
     mutationFn: (amount: number) => makeDeposit(userId, amount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.custom(() => (
-        <div className="min-w-82 bg-neutral-900 text-neutral-50 rounded-lg font-normal p-4">
-          <p className="text-sm">🎉 Valor de {translateType} adicionado</p>
-          <span className="text-xs text-neutral-500 font-normal">
-            Já pode visualizar na lista
-          </span>
-        </div>
-      ));
-      dialogCloseRef.current?.click();
-      if (onSuccess) onSuccess();
+      showSuccessToast();
+      closeDialog();
     },
     onError: (error) => {
       toast.error(`Erro ao adicionar ${translateType}: ${error.message}`);
@@ -81,22 +79,58 @@ export function TransactionDialog({
     mutationFn: (amount: number) => makeWithdrawal(userId, amount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.custom(() => (
-        <div className="min-w-82 bg-neutral-900 text-neutral-50 rounded-lg font-normal p-4">
-          <p className="text-sm">🎉 Valor de {translateType} adicionado</p>
-          <span className="text-xs text-neutral-500 font-normal">
-            Já pode visualizar na lista
-          </span>
-        </div>
-      ));
-      dialogCloseRef.current?.click();
-      if (onSuccess) onSuccess();
+      showSuccessToast();
+      closeDialog();
     },
     onError: (error) => {
       toast.error(`Erro ao adicionar ${translateType}: ${error.message}`);
       setError("Erro ao processar a transação. Verifique o saldo disponível.");
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      amount,
+      type,
+    }: {
+      id: string;
+      amount: number;
+      type: "deposit" | "withdrawal";
+    }) => updateTransaction(id, amount, type),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast.custom(() => (
+        <div className="min-w-82 bg-neutral-900 text-neutral-50 rounded-lg font-normal p-4">
+          <p className="text-sm">🎉 Valor de {translateType} atualizado</p>
+          <span className="text-xs text-neutral-500 font-normal">
+            Já pode visualizar na lista
+          </span>
+        </div>
+      ));
+      closeDialog();
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar transação: ${error.message}`);
+      setError("Erro ao atualizar. Verifique os dados ou o saldo disponível.");
+    },
+  });
+
+  const showSuccessToast = () => {
+    toast.custom(() => (
+      <div className="min-w-82 bg-neutral-900 text-neutral-50 rounded-lg font-normal p-4">
+        <p className="text-sm">🎉 Valor de {translateType} adicionado</p>
+        <span className="text-xs text-neutral-500 font-normal">
+          Já pode visualizar na lista
+        </span>
+      </div>
+    ));
+  };
+
+  const closeDialog = () => {
+    dialogCloseRef.current?.click();
+    if (onSuccess) onSuccess();
+  };
 
   const handleSubmit = () => {
     const amount = getNumericAmount();
@@ -106,15 +140,22 @@ export function TransactionDialog({
       return;
     }
 
-    if (type === "deposit") {
+    if (mode === "edit" && transactionId) {
+      updateMutation.mutate({ id: transactionId, amount, type });
+    } else if (type === "deposit") {
       depositMutation.mutate(amount);
     } else {
       withdrawalMutation.mutate(amount);
     }
   };
 
-  const titleText = mode === "add" ? "Quanto você quer adicionar?" : "Valor";
-  const isLoading = depositMutation.isPending || withdrawalMutation.isPending;
+  const titleText =
+    mode === "add" ? "Quanto você quer adicionar?" : "Editar valor";
+  const isLoading =
+    depositMutation.isPending ||
+    withdrawalMutation.isPending ||
+    updateMutation.isPending;
+  const buttonText = mode === "add" ? "Adicionar" : "Salvar alterações";
 
   return (
     <Dialog>
@@ -124,13 +165,13 @@ export function TransactionDialog({
           <DialogTitle>{titleText}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-2">
-          {/* Currency input */}
           <div className="relative text-2xl font-normal text-neutral-50 text-left mt-3">
+            <span className="absolute left-0">R$</span>
             <input
               type="text"
               value={value}
               onChange={handleValueChange}
-              className="w-full bg-transparent border-none outline-none focus:ring-0"
+              className="w-full bg-transparent border-none outline-none pl-8 focus:ring-0"
               placeholder="0,00"
               disabled={isLoading}
             />
@@ -166,11 +207,7 @@ export function TransactionDialog({
               className="w-auto"
               disabled={isLoading}
             >
-              {isLoading
-                ? "Processando..."
-                : mode === "add"
-                ? "Adicionar"
-                : "Salvar alterações"}
+              {isLoading ? "Processando..." : buttonText}
             </Button>
           </div>
         </div>

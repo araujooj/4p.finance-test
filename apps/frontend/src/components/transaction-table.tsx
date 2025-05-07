@@ -7,12 +7,14 @@ interface TransactionTableProps {
   transactions: Transaction[];
   onDelete: (id: string) => void;
   isLoading?: boolean;
+  userId: string;
 }
 
 export function TransactionTable({
   transactions,
   onDelete,
   isLoading = false,
+  userId,
 }: TransactionTableProps) {
   const formatCurrency = (amount: number) => {
     return amount
@@ -65,6 +67,8 @@ export function TransactionTable({
                 mode="edit"
                 initialValue={transaction.amount.toString()}
                 initialType={transaction.type}
+                transactionId={transaction.id}
+                userId={userId}
                 trigger={
                   <div className="flex items-center gap-2 hover:cursor-pointer flex-grow">
                     {transaction.type === "deposit" ? (

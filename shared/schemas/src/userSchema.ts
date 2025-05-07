@@ -34,8 +34,14 @@ export const statementSchema = z.object({
   transactions: z.array(transactionSchema),
 });
 
+export const updateTransactionSchema = z.object({
+  amount: z.number().positive("Transaction amount must be positive"),
+  type: z.enum(["deposit", "withdrawal"]),
+});
+
 export type CreateUserPayload = z.infer<typeof createUserSchema>;
 export type DepositPayload = z.infer<typeof depositSchema>;
 export type WithdrawalPayload = z.infer<typeof withdrawalSchema>;
 export type Transaction = z.infer<typeof transactionSchema>;
 export type Statement = z.infer<typeof statementSchema>;
+export type UpdateTransactionPayload = z.infer<typeof updateTransactionSchema>;

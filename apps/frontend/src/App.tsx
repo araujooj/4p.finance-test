@@ -100,6 +100,7 @@ function App() {
           transactions={filteredTransactions}
           onDelete={handleDelete}
           isLoading={isLoading}
+          userId={userId}
         />
       </main>
     </div>

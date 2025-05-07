@@ -4,6 +4,7 @@ import {
   createUserSchema,
   depositSchema,
   withdrawalSchema,
+  updateTransactionSchema,
 } from "@4p.finance/schemas";
 
 export const userRouter = Router();
@@ -121,5 +122,43 @@ userRouter.get("/:userId/statement", (async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to get statement", error: error.message });
+  }
+}) as RequestHandler);
+
+// Update Transaction
+userRouter.put("/transactions/:transactionId", (async (req, res) => {
+  try {
+    const validationResult = updateTransactionSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: "Falha na validação dos dados",
+        errors: validationResult.error.format(),
+        expectedSchema: {
+          amount:
+            "número positivo em unidades monetárias (ex: 10.50 = R$10,50)",
+          type: "tipo de transação ('deposit' ou 'withdrawal')",
+        },
+      });
+    }
+
+    const result = await userService.updateTransaction(
+      req.params.transactionId,
+      validationResult.data
+    );
+
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === "Transaction not found") {
+      return res.status(404).json({ message: error.message });
+    }
+    if (
+      error.message === "User not found" ||
+      error.message === "Insufficient funds"
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+    res
+      .status(500)
+      .json({ message: "Failed to update transaction", error: error.message });
   }
 }) as RequestHandler);

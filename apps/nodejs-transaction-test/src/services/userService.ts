@@ -161,4 +161,79 @@ export const userService = {
       })),
     };
   },
+
+  async updateTransaction(
+    transactionId: string,
+    data: { amount: number; type: "deposit" | "withdrawal" }
+  ) {
+    const existingTransaction = await db.query.transactions.findFirst({
+      where: eq(transactions.id, transactionId),
+    });
+
+    if (!existingTransaction) {
+      throw new Error("Transaction not found");
+    }
+
+    const userId = existingTransaction.userId;
+    const mutex = getUserMutex(userId);
+    await mutex.acquire();
+
+    try {
+      return await db.transaction(async (tx) => {
+        const user = await tx.query.users.findFirst({
+          where: eq(users.id, userId),
+          for: "update" as never,
+        });
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        const oldAmountInCents = existingTransaction.amount;
+        const newAmountInCents = data.amount * 100;
+
+        let balanceAdjustment = 0;
+
+        if (existingTransaction.type === "deposit") {
+          balanceAdjustment -= oldAmountInCents;
+        } else {
+          balanceAdjustment += oldAmountInCents;
+        }
+
+        if (data.type === "deposit") {
+          balanceAdjustment += newAmountInCents;
+        } else {
+          balanceAdjustment -= newAmountInCents;
+        }
+
+        const newBalance = user.balance + balanceAdjustment;
+        if (newBalance < 0) {
+          throw new Error("Insufficient funds");
+        }
+
+        await tx
+          .update(users)
+          .set({ balance: newBalance, updatedAt: sql`(strftime('%s', 'now'))` })
+          .where(eq(users.id, userId));
+
+        const [updatedTransaction] = await tx
+          .update(transactions)
+          .set({
+            amount: newAmountInCents,
+            type: data.type,
+            timestamp: sql`(strftime('%s', 'now'))`,
+          })
+          .where(eq(transactions.id, transactionId))
+          .returning();
+
+        return {
+          ...updatedTransaction,
+          amount: updatedTransaction.amount / 100,
+          balance: newBalance / 100,
+        };
+      });
+    } finally {
+      mutex.release();
+    }
+  },
 };
