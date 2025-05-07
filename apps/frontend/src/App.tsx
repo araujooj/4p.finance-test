@@ -12,6 +12,8 @@ import { useQueryState } from "nuqs";
 import { useQuery } from "@tanstack/react-query";
 import { getTransactions } from "./api/transactions";
 
+const userId = "5888ddc9-b8be-4b0d-b04e-f06faef0e100";
+
 function App() {
   const [selectedTab, setSelectedTab] = useQueryState("selectedTab", {
     defaultValue: "all",
@@ -19,7 +21,7 @@ function App() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["transactions"],
-    queryFn: () => getTransactions("5888ddc9-b8be-4b0d-b04e-f06faef0e100"),
+    queryFn: () => getTransactions(userId),
   });
 
   const filteredTransactions =
@@ -43,6 +45,7 @@ function App() {
         <TransactionDialog
           trigger={<Button variant="brand">Novo valor</Button>}
           mode="add"
+          userId={userId}
         />
       </header>
       <main className="flex-1 w-full max-w-screen-lg mx-auto mt-8 sm:mt-20 px-4 pb-10">

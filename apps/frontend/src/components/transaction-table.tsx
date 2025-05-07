@@ -45,8 +45,14 @@ export function TransactionTable({
   return (
     <div className="mt-6 space-y-px">
       {transactions.length === 0 ? (
-        <div className="flex justify-center items-center p-8 bg-neutral-900 rounded-lg text-neutral-500">
-          Nenhuma transação encontrada.
+        <div className="flex flex-col justify-center items-center p-8 mt-30 max-w-sm mx-auto text-center rounded-lg text-neutral-500">
+          <p className="text-lg text-foreground">
+            Nenhum lançamento cadastrado
+          </p>
+          <span className="text-sm text-neutral-500">
+            Caso para adicionar clique em novo valor ou se quiser resgatar um
+            antigo clique em excluídos
+          </span>
         </div>
       ) : (
         transactions.map((transaction) => {
