@@ -18,6 +18,7 @@ const buttonVariants = cva(
         "icon-destructive":
           "rounded-md bg-alert-100 text-destructive border border-alert-100 size-8 hover:bg-destructive hover:text-foreground hover:border-destructive",
         icon: "rounded-md bg-neutral-900 border border-neutral-800 size-8",
+        "transaction-type": "text-neutral-50 rounded-full h-8 px-4 py-2",
       },
       size: {
         default: "h-8 px-4 px-3.5 py-2",
@@ -27,9 +28,24 @@ const buttonVariants = cva(
         inactive: "",
       },
     },
+    compoundVariants: [
+      {
+        variant: "transaction-type",
+        state: "active",
+        className:
+          "bg-neutral-600 text-neutral-50 border border-neutral-600 text-sm py-1 px-3",
+      },
+      {
+        variant: "transaction-type",
+        state: "inactive",
+        className:
+          "bg-neutral-800 text-neutral-50 border border-neutral-800 hover:bg-neutral-700 text-sm py-1 px-3",
+      },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",
+      state: "inactive",
     },
   }
 );
