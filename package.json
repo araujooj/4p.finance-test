@@ -17,7 +17,7 @@
     "db:studio": "pnpm --filter nodejs-transaction-test run db:studio",
     "dev:frontend": "pnpm --filter frontend run dev",
     "dev:fullstack": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
-    "dev:backend": "pnpm db:migrate && concurrently \"pnpm dev:schemas\" \"pnpm dev:nodejs-transaction-test\"",
+    "dev:backend": "pnpm db:migrate && pnpm --filter schemas run build && pnpm dev:nodejs-transaction-test",
     "test:backend": "pnpm --filter nodejs-transaction-test run test",
     "dev": "pnpm dev:backend",
     "nuke": "pnpm nuke:shared && pnpm nuke:apps && pnpm nuke:lockfile",

@@ -20,6 +20,22 @@ export const withdrawalSchema = z.object({
   description: z.string().optional(),
 });
 
+export const transactionSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  type: z.enum(["deposit", "withdrawal"]),
+  amount: z.number().positive(),
+  description: z.string().nullable(),
+  timestamp: z.string().datetime(),
+});
+
+export const statementSchema = z.object({
+  currentBalance: z.number(),
+  transactions: z.array(transactionSchema),
+});
+
 export type CreateUserPayload = z.infer<typeof createUserSchema>;
 export type DepositPayload = z.infer<typeof depositSchema>;
 export type WithdrawalPayload = z.infer<typeof withdrawalSchema>;
+export type Transaction = z.infer<typeof transactionSchema>;
+export type Statement = z.infer<typeof statementSchema>;

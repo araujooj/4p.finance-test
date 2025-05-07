@@ -9,36 +9,31 @@ import {
 import { TransactionDialog } from "./components/transaction-dialog";
 import { TransactionTable } from "./components/transaction-table";
 import { useQueryState } from "nuqs";
-import { useState } from "react";
-
-const initialTransactions = [
-  { id: "1", amount: 1223.42, type: "income" as const },
-  { id: "2", amount: 40.2, type: "income" as const },
-  { id: "3", amount: 2209.22, type: "income" as const },
-  { id: "4", amount: 5223.42, type: "expense" as const },
-  { id: "5", amount: 10223.42, type: "income" as const },
-  { id: "6", amount: 253.26, type: "income" as const },
-  { id: "7", amount: 900.0, type: "expense" as const },
-  { id: "8", amount: 13879.9, type: "income" as const },
-  { id: "9", amount: 22223.42, type: "income" as const },
-];
+import { useQuery } from "@tanstack/react-query";
+import { getTransactions } from "./api/transactions";
 
 function App() {
   const [selectedTab, setSelectedTab] = useQueryState("selectedTab", {
     defaultValue: "all",
   });
 
-  const [transactions, setTransactions] = useState(initialTransactions);
-  const filteredTransactions = transactions.filter((transaction) => {
-    if (selectedTab === "all") return true;
-    if (selectedTab === "entries") return transaction.type === "income";
-    if (selectedTab === "withdrawals") return transaction.type === "expense";
-    if (selectedTab === "deleted") return false;
-    return true;
+  const { data, isLoading } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: () => getTransactions("5888ddc9-b8be-4b0d-b04e-f06faef0e100"),
   });
 
+  const filteredTransactions =
+    data?.transactions.filter((transaction) => {
+      if (selectedTab === "all") return true;
+      if (selectedTab === "entries") return transaction.type === "deposit";
+      if (selectedTab === "withdrawals")
+        return transaction.type === "withdrawal";
+      if (selectedTab === "deleted") return false;
+      return true;
+    }) || [];
+
   const handleDelete = (id: string) => {
-    setTransactions(transactions.filter((t) => t.id !== id));
+    console.log(`Delete transaction: ${id}`);
   };
 
   return (
@@ -59,7 +54,7 @@ function App() {
               className="w-full sm:w-auto"
             >
               <DashboardIcon />
-              <span className="ml-2">Todos</span>
+              Todos
             </Button>
             <Button
               state={selectedTab === "entries" ? "active" : "inactive"}
@@ -67,7 +62,7 @@ function App() {
               className="w-full sm:w-auto"
             >
               <DownloadIcon />
-              <span className="ml-2">Entradas</span>
+              Entradas
             </Button>
             <Button
               state={selectedTab === "withdrawals" ? "active" : "inactive"}
@@ -75,7 +70,7 @@ function App() {
               className="w-full sm:w-auto"
             >
               <UploadIcon />
-              <span className="ml-2">Saídas</span>
+              Saídas
             </Button>
           </div>
           <Button
@@ -84,13 +79,24 @@ function App() {
             className="w-full sm:w-auto"
           >
             <TrashIcon />
-            <span className="ml-2">Excluídos</span>
+            Excluídos
           </Button>
         </div>
+
+        {data && (
+          <div className="mt-8 text-xl font-bold text-neutral-50">
+            Saldo atual:{" "}
+            {data.currentBalance.toLocaleString("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            })}
+          </div>
+        )}
 
         <TransactionTable
           transactions={filteredTransactions}
           onDelete={handleDelete}
+          isLoading={isLoading}
         />
       </main>
     </div>
