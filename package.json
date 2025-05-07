@@ -9,10 +9,22 @@
   ],
   "author": "araujooj",
   "license": "MIT",
-  "dependencies": {
-    "zod": "^3.24.4"
+  "scripts": {
+    "dev:schemas": "pnpm --filter schemas run dev",
+    "dev:nodejs-transaction-test": "pnpm --filter nodejs-transaction-test run dev",
+    "db:migrate": "pnpm --filter nodejs-transaction-test run db:migrate",
+    "db:generate": "pnpm --filter nodejs-transaction-test run db:generate",
+    "db:studio": "pnpm --filter nodejs-transaction-test run db:studio",
+    "dev:backend": "pnpm db:migrate && concurrently \"pnpm dev:schemas\" \"pnpm dev:nodejs-transaction-test\"",
+    "dev": "pnpm dev:backend",
+    "nuke": "pnpm nuke:shared && pnpm nuke:apps && pnpm nuke:lockfile",
+    "nuke:shared": "for d in shared/*/node_modules shared/*/*/node_modules shared/*/*/*/node_modules shared/*/dist shared/*/*/dist shared/*/*/*/dist shared/*/.turbo shared/*/*/.turbo shared/*/*/*/.turbo; do if [ -d $d ]; then echo $d; rm -rf $d; fi; done",
+    "nuke:apps": "rm -rf node_modules .next .turbo storybook-static .vercel; for d in apps/*/node_modules apps/*/.next apps/*/.turbo apps/*/storybook-static apps/*/.vercel; do if [ -d $d ]; then echo $d; rm -rf $d; fi; done",
+    "nuke:lockfile": "rm -rf package-lock.json yarn.lock bun.lockb pnpm-lock.yaml",
+    "reset": "pnpm nuke && pnpm install"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "typescript": "^5.8.3"
   }
 }

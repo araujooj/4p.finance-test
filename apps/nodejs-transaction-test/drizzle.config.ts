@@ -4,9 +4,9 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 
 export default {
+  dialect: "sqlite",
   schema: "./src/db/schema.ts",
   out: "./drizzle/migrations",
-  driver: "better-sqlite",
   dbCredentials: {
     url: process.env.DATABASE_URL || "sqlite.db",
   },
