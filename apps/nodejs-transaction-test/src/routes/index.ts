@@ -13,7 +13,14 @@ userRouter.post("/", (async (req, res) => {
   try {
     const validationResult = createUserSchema.safeParse(req.body);
     if (!validationResult.success) {
-      return res.status(400).json({ errors: validationResult.error.flatten() });
+      return res.status(400).json({
+        message: "Falha na validação dos dados",
+        errors: validationResult.error.format(),
+        expectedSchema: {
+          name: "string (obrigatório)",
+          initialBalance: "número (opcional, padrão: 0)",
+        },
+      });
     }
     const newUser = await userService.createUser(validationResult.data);
     res.status(201).json(newUser);
@@ -44,7 +51,15 @@ userRouter.post("/:userId/deposit", (async (req, res) => {
   try {
     const validationResult = depositSchema.safeParse(req.body);
     if (!validationResult.success) {
-      return res.status(400).json({ errors: validationResult.error.flatten() });
+      return res.status(400).json({
+        message: "Falha na validação dos dados",
+        errors: validationResult.error.format(),
+        expectedSchema: {
+          amount:
+            "número positivo em unidades monetárias (ex: 10.50 = R$10,50)",
+          description: "string (opcional)",
+        },
+      });
     }
     const result = await userService.deposit(
       req.params.userId,
@@ -66,7 +81,15 @@ userRouter.post("/:userId/withdraw", (async (req, res) => {
   try {
     const validationResult = withdrawalSchema.safeParse(req.body);
     if (!validationResult.success) {
-      return res.status(400).json({ errors: validationResult.error.flatten() });
+      return res.status(400).json({
+        message: "Falha na validação dos dados",
+        errors: validationResult.error.format(),
+        expectedSchema: {
+          amount:
+            "número positivo em unidades monetárias (ex: 10.50 = R$10,50)",
+          description: "string (opcional)",
+        },
+      });
     }
     const result = await userService.withdraw(
       req.params.userId,

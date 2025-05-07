@@ -11,18 +11,12 @@ export const createUserSchema = z.object({
 });
 
 export const depositSchema = z.object({
-  amount: z
-    .number()
-    .int()
-    .positive("Deposit amount must be a positive integer"),
+  amount: z.number().positive("Deposit amount must be positive"),
   description: z.string().optional(),
 });
 
 export const withdrawalSchema = z.object({
-  amount: z
-    .number()
-    .int()
-    .positive("Withdrawal amount must be a positive integer"),
+  amount: z.number().positive("Withdrawal amount must be positive"),
   description: z.string().optional(),
 });
 
