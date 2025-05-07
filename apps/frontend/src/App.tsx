@@ -11,22 +11,28 @@ import { TransactionTable } from "./components/transaction-table";
 import { useQueryState } from "nuqs";
 import { useQuery } from "@tanstack/react-query";
 import { getTransactions } from "./api/transactions";
+import { useUser } from "./context/user-context";
+import { UserSelector } from "./components/user-selector";
 
-function App() {
+function TransactionApp() {
   const [selectedTab, setSelectedTab] = useQueryState("selectedTab", {
     defaultValue: "all",
   });
 
-  // Use a constant for userId
-  const userId = "5888ddc9-b8be-4b0d-b04e-f06faef0e100";
+  const { currentUser, isLoading: userLoading } = useUser();
+  const userId = currentUser?.id;
 
   // Check if we should show deleted items
   const showDeleted = selectedTab === "deleted";
 
   // Fetch transactions, include deleted ones if on deleted tab
   const { data, isLoading } = useQuery({
-    queryKey: ["transactions", showDeleted],
-    queryFn: () => getTransactions(userId, showDeleted),
+    queryKey: ["transactions", userId, showDeleted],
+    queryFn: () => {
+      if (!userId) return { currentBalance: 0, transactions: [] };
+      return getTransactions(userId, showDeleted);
+    },
+    enabled: !!userId,
   });
 
   // Filter transactions based on selected tab
@@ -41,10 +47,34 @@ function App() {
       return !transaction.deleted;
     }) || [];
 
+  if (userLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-4 text-center">
+        <Logo />
+        <h1 className="text-2xl font-bold">Bem-vindo ao 4p.finance</h1>
+        <p className="text-neutral-500 max-w-md">
+          Para começar, crie uma conta para gerenciar suas finanças
+        </p>
+        <UserSelector />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full px-4 py-6 sm:py-10 max-w-screen-lg mx-auto">
-        <Logo />
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <Logo />
+          <UserSelector />
+        </div>
         <TransactionDialog
           trigger={<Button variant="brand">Novo valor</Button>}
           mode="add"
@@ -118,4 +148,4 @@ function App() {
   );
 }
 
-export default App;
+export default TransactionApp;

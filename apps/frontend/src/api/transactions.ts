@@ -77,3 +77,16 @@ export async function restoreTransaction(transactionId: string) {
     .json();
   return response;
 }
+
+export async function createUser(name: string, initialBalance?: number) {
+  const response = await ky
+    .post(`${API_URL}/users`, {
+      json: { name, initialBalance: initialBalance || 0 },
+    })
+    .json();
+
+  return response as {
+    id: string;
+    name: string;
+  };
+}
