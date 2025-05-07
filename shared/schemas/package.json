@@ -1,10 +1,12 @@
 {
   "name": "@4p.finance/schemas",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "tsc -w"
   },
   "keywords": [],
   "author": "",
