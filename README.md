@@ -90,8 +90,21 @@ Isso executa todos os testes, incluindo testes de serviços, rotas e proteção 
 
 ## Tecnologias Utilizadas
 
+### Backend
+
 - Node.js + Express
 - TypeScript
 - SQLite + Drizzle ORM
 - Zod para validação de dados
 - Vitest para testes automatizados
+
+### Frontend
+
+- React com TypeScript
+- Vite (ferramenta de build)
+- Tailwind CSS para estilização
+- Radix UI para componentes
+- TanStack Query para gerenciamento de estado e cache
+- Zod para validação de formulários
+- NUQS para gerenciamento de estado via parâmetros de URL
+- Context API para gerenciamento de estado global
