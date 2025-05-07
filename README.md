@@ -28,31 +28,21 @@ todo
 pnpm install
 ```
 
-### Executando Migrações do Banco de Dados
-
-Antes de iniciar o servidor, é necessário executar as migrações do banco de dados:
-
-```bash
-# Gerar migrações a partir do schema
-pnpm db:generate
-
-# Aplicar migrações ao banco de dados SQLite
-pnpm db:migrate
-```
-
 ### Iniciando o Servidor de Desenvolvimento
 
 Para iniciar o servidor de desenvolvimento com hot-reload:
 
 ```bash
-pnpm dev
+pnpm dev:backend
 ```
 
-Este comando:
+Este comando automaticamente:
 
-1. Executa as migrações do banco de dados
+1. Executa as migrações do banco de dados SQLite
 2. Inicia o compilador TypeScript em modo watch para os schemas compartilhados
 3. Inicia o servidor backend
+
+Não é necessário executar comandos de migração separadamente.
 
 ### Visualizando o Banco de Dados
 
@@ -61,6 +51,16 @@ Para visualizar o banco de dados SQLite através da interface do Drizzle Studio:
 ```bash
 pnpm db:studio
 ```
+
+### Executando os Testes
+
+Para rodar os testes automatizados do backend:
+
+```bash
+pnpm test:backend
+```
+
+Isso executa todos os testes, incluindo testes de serviços, rotas e proteção contra race conditions.
 
 ## API Endpoints
 
@@ -76,3 +76,4 @@ pnpm db:studio
 - TypeScript
 - SQLite + Drizzle ORM
 - Zod para validação de dados
+- Vitest para testes automatizados

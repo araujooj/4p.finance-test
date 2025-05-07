@@ -16,6 +16,7 @@
     "db:generate": "pnpm --filter nodejs-transaction-test run db:generate",
     "db:studio": "pnpm --filter nodejs-transaction-test run db:studio",
     "dev:backend": "pnpm db:migrate && concurrently \"pnpm dev:schemas\" \"pnpm dev:nodejs-transaction-test\"",
+    "test:backend": "pnpm --filter nodejs-transaction-test run test",
     "dev": "pnpm dev:backend",
     "nuke": "pnpm nuke:shared && pnpm nuke:apps && pnpm nuke:lockfile",
     "nuke:shared": "for d in shared/*/node_modules shared/*/*/node_modules shared/*/*/*/node_modules shared/*/dist shared/*/*/dist shared/*/*/*/dist shared/*/.turbo shared/*/*/.turbo shared/*/*/*/.turbo; do if [ -d $d ]; then echo $d; rm -rf $d; fi; done",
