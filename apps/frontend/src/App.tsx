@@ -1,12 +1,13 @@
-import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
+import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
+import { DashboardIcon } from "@radix-ui/react-icons";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background text-foreground">
+      <Logo />
       <div className="flex gap-8 mb-8">
         <a
           href="https://vite.dev"
@@ -28,20 +29,26 @@ function App() {
         </a>
       </div>
       <h1 className="text-4xl font-bold mb-8">Vite + React</h1>
-      <div className="bg-card text-card-foreground p-6 rounded-lg shadow-md mb-8 w-full max-w-md">
-        <button
-          onClick={() => setCount((count) => count + 1)}
-          className="w-full bg-primary hover:cursor-pointer  text-primary-foreground py-2 px-4 rounded-md mb-4 hover:bg-primary/90 transition-colors"
-        >
-          count is {count}
-        </button>
-        <p className="text-muted-foreground">
-          Edit{" "}
-          <code className="bg-muted px-1.5 py-0.5 rounded text-sm">
-            src/App.tsx
-          </code>{" "}
-          and save to test HMR
-        </p>
+
+      <div className="flex bg-foreground text-card-foreground p-6 rounded-lg shadow-md mb-8 w-full max-w-md">
+        <div className="flex flex-col items-center w-full justify-center gap-2">
+          <Button>text</Button>
+          <Button>
+            <DashboardIcon />
+            text
+          </Button>
+          <Button variant="brand">text</Button>
+          <Button variant="icon">
+            <DashboardIcon />
+          </Button>
+          <Button variant="icon-destructive">
+            <DashboardIcon />
+          </Button>
+          <Button state="active">active</Button>
+          <Button state="active" variant="icon">
+            1
+          </Button>
+        </div>
       </div>
       <p className="text-sm text-muted-foreground">
         Click on the Vite and React logos to learn more
