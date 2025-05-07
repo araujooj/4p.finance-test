@@ -3,7 +3,7 @@ import viteLogo from "/vite.svg";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { DashboardIcon, PlusIcon } from "@radix-ui/react-icons";
-import { TransactionDialog } from "./components/TransactionDialog";
+import { TransactionDialog } from "./components/transaction-dialog";
 
 function App() {
   return (
@@ -71,7 +71,7 @@ function App() {
           trigger={<Button variant="outline">Editar Transação</Button>}
           mode="edit"
           initialValue="120.44"
-          initialType="expense"
+          initialType="deposit"
         />
       </div>
 

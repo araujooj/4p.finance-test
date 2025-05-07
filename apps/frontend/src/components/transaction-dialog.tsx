@@ -1,20 +1,20 @@
 import * as React from "react";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogTrigger,
-  DialogClose, // If you need a separate close button in the footer
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface TransactionDialogProps {
   trigger: React.ReactNode;
   mode?: "add" | "edit";
   initialValue?: string;
-  initialType?: "income" | "expense";
+  initialType?: "deposit" | "withdrawal";
   showError?: boolean;
 }
 
@@ -22,11 +22,12 @@ export function TransactionDialog({
   trigger,
   mode = "add",
   initialValue = "0.00",
-  initialType = "income",
+  initialType = "deposit",
   showError = false,
 }: TransactionDialogProps) {
-  const [type, setType] = React.useState<"income" | "expense">(initialType);
+  const [type, setType] = React.useState<"deposit" | "withdrawal">(initialType);
   const [value, setValue] = React.useState(initialValue);
+  const translateType = type === "deposit" ? "entrada" : "saída";
 
   const titleText = mode === "add" ? "Quanto você quer adicionar?" : "Valor";
 
@@ -52,24 +53,41 @@ export function TransactionDialog({
             <div className="flex bg-neutral-800 rounded-full p-2">
               <Button
                 variant="transaction-type"
-                state={type === "income" ? "active" : "inactive"}
-                onClick={() => setType("income")}
+                state={type === "deposit" ? "active" : "inactive"}
+                onClick={() => setType("deposit")}
                 className="flex-1 justify-center"
               >
                 Entrada
               </Button>
               <Button
                 variant="transaction-type"
-                state={type === "expense" ? "active" : "inactive"}
-                onClick={() => setType("expense")}
+                state={type === "withdrawal" ? "active" : "inactive"}
+                onClick={() => setType("withdrawal")}
                 className="flex-1 justify-center"
               >
                 Saída
               </Button>
             </div>
-            <Button variant="brand" className="w-auto">
-              {mode === "add" ? "Adicionar" : "Salvar alterações"}
-            </Button>
+            <DialogClose asChild>
+              <Button
+                onClick={() => {
+                  toast.custom(() => (
+                    <div className="min-w-82 bg-neutral-900 text-neutral-50 rounded-lg font-normal p-4">
+                      <p className="text-sm">
+                        🎉 Valor de {translateType} adicionado
+                      </p>
+                      <span className="text-xs text-neutral-500 font-normal">
+                        Já pode visualizar na lista
+                      </span>
+                    </div>
+                  ));
+                }}
+                variant="brand"
+                className="w-auto"
+              >
+                {mode === "add" ? "Adicionar" : "Salvar alterações"}
+              </Button>
+            </DialogClose>
           </div>
         </div>
       </DialogContent>
