@@ -8,10 +8,6 @@ Este monorepo contém um sistema de banco digital simples que permite que usuár
 - `apps/nodejs-transaction-test`: Backend do sistema bancário
 - `shared/schemas`: Esquemas Zod compartilhados entre frontend e backend
 
-## Como executar o frontend
-
-todo
-
 ## Como Executar o Backend
 
 ### Pré-requisitos
@@ -44,6 +40,16 @@ Este comando automaticamente:
 
 Não é necessário executar comandos de migração separadamente.
 
+## Como executar o frontend
+
+Depois de iniciar o servidor de desenvolvimento do backend, você pode iniciar o frontend:
+
+```bash
+pnpm dev:frontend
+```
+
+Isso inicia o frontend em modo hot-reload, conectado a API do backend em `http://localhost:3000`.
+
 ### Visualizando o Banco de Dados
 
 Para visualizar o banco de dados SQLite através da interface do Drizzle Studio:
@@ -64,11 +70,23 @@ Isso executa todos os testes, incluindo testes de serviços, rotas e proteção 
 
 ## API Endpoints
 
+### Usuários
+
 - **POST /users**: Criar um novo usuário
 - **GET /users/:userId**: Obter detalhes de um usuário, incluindo saldo
+
+### Transações
+
 - **POST /users/:userId/deposit**: Realizar um depósito
 - **POST /users/:userId/withdraw**: Realizar um saque
 - **GET /users/:userId/statement**: Obter extrato de transações
+  - Parâmetro opcional: `?includeDeleted=true` para incluir transações excluídas
+
+### Gerenciamento de Transações
+
+- **PUT /users/transactions/:transactionId**: Atualizar uma transação existente
+- **DELETE /users/transactions/:transactionId**: Excluir uma transação (exclusão lógica)
+- **POST /users/transactions/:transactionId/restore**: Restaurar uma transação excluída
 
 ## Tecnologias Utilizadas
 
