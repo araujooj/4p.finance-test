@@ -2,20 +2,71 @@ import { Button } from "@/components/ui/button";
 import { TransactionDialog } from "./transaction-dialog";
 import { TrashIcon, UploadIcon, DownloadIcon } from "@radix-ui/react-icons";
 import type { Transaction } from "@4p.finance/schemas";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteTransaction, restoreTransaction } from "@/api/transactions";
+import { toast } from "sonner";
 
 interface TransactionTableProps {
   transactions: Transaction[];
-  onDelete: (id: string) => void;
   isLoading?: boolean;
   userId: string;
+  showDeleted?: boolean;
 }
 
 export function TransactionTable({
   transactions,
-  onDelete,
   isLoading = false,
   userId,
 }: TransactionTableProps) {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteTransaction(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast.custom(() => (
+        <div className="min-w-82 bg-neutral-900 text-neutral-50 rounded-lg font-normal p-4">
+          <p className="text-sm">Valor excluído</p>
+          <span className="text-xs text-neutral-500 font-normal">
+            Já pode visualizar na pasta de{" "}
+            <strong className="text-foreground font-medium underline">
+              excluídos
+            </strong>
+          </span>
+        </div>
+      ));
+    },
+    onError: (error) => {
+      toast.error(`Erro ao excluir: ${error.message}`);
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => restoreTransaction(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast.custom(() => (
+        <div className="min-w-82 bg-neutral-900 text-neutral-50 rounded-lg font-normal p-4">
+          <p className="text-sm">Valor restaurado</p>
+          <span className="text-xs text-neutral-500 font-normal">
+            Já pode visualizar na lista
+          </span>
+        </div>
+      ));
+    },
+    onError: (error) => {
+      toast.error(`Erro ao restaurar: ${error.message}`);
+    },
+  });
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id);
+  };
+
+  const handleRestore = (id: string) => {
+    restoreMutation.mutate(id);
+  };
+
   const formatCurrency = (amount: number) => {
     return amount
       .toLocaleString("pt-BR", {
@@ -58,51 +109,95 @@ export function TransactionTable({
         </div>
       ) : (
         transactions.map((transaction) => {
+          const isDeleted = Boolean(transaction.deleted);
           return (
             <div
               key={transaction.id}
-              className="flex justify-between items-center p-4 bg-neutral-900 border-b border-neutral-800 first:rounded-t-lg last:rounded-b-lg"
+              className={`flex justify-between items-center p-4 bg-neutral-900 border-b border-neutral-800 first:rounded-t-lg last:rounded-b-lg ${
+                isDeleted ? "opacity-60" : ""
+              }`}
             >
-              <TransactionDialog
-                mode="edit"
-                initialValue={transaction.amount.toString()}
-                initialType={transaction.type}
-                transactionId={transaction.id}
-                userId={userId}
-                trigger={
-                  <div className="flex items-center gap-2 hover:cursor-pointer flex-grow">
-                    {transaction.type === "deposit" ? (
-                      <DownloadIcon className="text-positive-50" />
-                    ) : (
-                      <UploadIcon className="text-destructive" />
-                    )}
-                    <span
-                      className={
-                        transaction.type === "deposit"
-                          ? "text-positive-50"
-                          : "text-destructive"
-                      }
-                    >
-                      {formatCurrency(transaction.amount)}
-                    </span>
-                    {transaction.description && (
-                      <span className="text-neutral-500 text-xs ml-2">
-                        {transaction.description}
+              {!isDeleted ? (
+                <TransactionDialog
+                  mode="edit"
+                  initialValue={transaction.amount.toString()}
+                  initialType={transaction.type}
+                  transactionId={transaction.id}
+                  userId={userId}
+                  trigger={
+                    <div className="flex items-center gap-2 hover:cursor-pointer flex-grow">
+                      {transaction.type === "deposit" ? (
+                        <DownloadIcon className="text-positive-50" />
+                      ) : (
+                        <UploadIcon className="text-destructive" />
+                      )}
+                      <span
+                        className={
+                          transaction.type === "deposit"
+                            ? "text-positive-50"
+                            : "text-destructive"
+                        }
+                      >
+                        {formatCurrency(transaction.amount)}
                       </span>
-                    )}
-                  </div>
-                }
-              />
+                      {transaction.description && (
+                        <span className="text-neutral-500 text-xs ml-2">
+                          {transaction.description}
+                        </span>
+                      )}
+                    </div>
+                  }
+                />
+              ) : (
+                <div className="flex items-center gap-2 flex-grow">
+                  {transaction.type === "deposit" ? (
+                    <DownloadIcon className="text-positive-50" />
+                  ) : (
+                    <UploadIcon className="text-destructive" />
+                  )}
+                  <span
+                    className={
+                      transaction.type === "deposit"
+                        ? "text-positive-50"
+                        : "text-destructive"
+                    }
+                  >
+                    {formatCurrency(transaction.amount)}
+                  </span>
+                  {transaction.description && (
+                    <span className="text-neutral-500 text-xs ml-2">
+                      {transaction.description}
+                    </span>
+                  )}
+                  <span className="text-neutral-500 text-xs ml-2 italic">
+                    (Excluído)
+                  </span>
+                </div>
+              )}
 
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(transaction.id);
-                }}
-                variant="icon-destructive"
-              >
-                <TrashIcon className="size-4" />
-              </Button>
+              {!isDeleted ? (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(transaction.id);
+                  }}
+                  variant="icon-destructive"
+                  disabled={deleteMutation.isPending}
+                >
+                  <TrashIcon className="size-4" />
+                </Button>
+              ) : (
+                <Button
+                  className="opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRestore(transaction.id);
+                  }}
+                  disabled={restoreMutation.isPending}
+                >
+                  Restaurar
+                </Button>
+              )}
             </div>
           );
         })

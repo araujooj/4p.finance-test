@@ -12,31 +12,34 @@ import { useQueryState } from "nuqs";
 import { useQuery } from "@tanstack/react-query";
 import { getTransactions } from "./api/transactions";
 
-const userId = "5888ddc9-b8be-4b0d-b04e-f06faef0e100";
-
 function App() {
   const [selectedTab, setSelectedTab] = useQueryState("selectedTab", {
     defaultValue: "all",
   });
 
+  // Use a constant for userId
+  const userId = "5888ddc9-b8be-4b0d-b04e-f06faef0e100";
+
+  // Check if we should show deleted items
+  const showDeleted = selectedTab === "deleted";
+
+  // Fetch transactions, include deleted ones if on deleted tab
   const { data, isLoading } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () => getTransactions(userId),
+    queryKey: ["transactions", showDeleted],
+    queryFn: () => getTransactions(userId, showDeleted),
   });
 
+  // Filter transactions based on selected tab
   const filteredTransactions =
     data?.transactions.filter((transaction) => {
-      if (selectedTab === "all") return true;
-      if (selectedTab === "entries") return transaction.type === "deposit";
+      if (selectedTab === "all") return !transaction.deleted;
+      if (selectedTab === "entries")
+        return transaction.type === "deposit" && !transaction.deleted;
       if (selectedTab === "withdrawals")
-        return transaction.type === "withdrawal";
-      if (selectedTab === "deleted") return false;
-      return true;
+        return transaction.type === "withdrawal" && !transaction.deleted;
+      if (selectedTab === "deleted") return Boolean(transaction.deleted);
+      return !transaction.deleted;
     }) || [];
-
-  const handleDelete = (id: string) => {
-    console.log(`Delete transaction: ${id}`);
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -86,21 +89,29 @@ function App() {
           </Button>
         </div>
 
-        {data && (
-          <div className="mt-8 text-xl font-bold text-neutral-50">
-            Saldo atual:{" "}
-            {data.currentBalance.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            })}
+        {data && !showDeleted && (
+          <div className="mt-8 p-4 bg-neutral-900 border border-neutral-800 rounded-lg">
+            <p className="text-neutral-500 text-sm mb-1">Saldo atual</p>
+            <p
+              className={`text-2xl font-bold ${
+                data.currentBalance >= 0
+                  ? "text-positive-50"
+                  : "text-destructive"
+              }`}
+            >
+              {data.currentBalance.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
+            </p>
           </div>
         )}
 
         <TransactionTable
           transactions={filteredTransactions}
-          onDelete={handleDelete}
           isLoading={isLoading}
           userId={userId}
+          showDeleted={showDeleted}
         />
       </main>
     </div>

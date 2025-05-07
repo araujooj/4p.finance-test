@@ -8,6 +8,13 @@
       "when": 1746624253006,
       "tag": "0000_confused_the_hunter",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1746644374536,
+      "tag": "0001_graceful_rogue",
+      "breakpoints": true
     }
   ]
 }

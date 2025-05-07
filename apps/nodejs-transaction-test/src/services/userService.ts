@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { users, transactions } from "../db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, SQL } from "drizzle-orm";
 import {
   CreateUserPayload,
   DepositPayload,
@@ -141,15 +141,23 @@ export const userService = {
     }
   },
 
-  async getStatement(userId: string) {
+  async getStatement(userId: string, includeDeleted: boolean = false) {
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
     });
+
     if (!user) {
       throw new Error("User not found");
     }
+
+    let query = eq(transactions.userId, userId);
+
+    if (!includeDeleted) {
+      query = and(query, eq(transactions.deleted, false)) as SQL<unknown>;
+    }
+
     const userTransactions = await db.query.transactions.findMany({
-      where: eq(transactions.userId, userId),
+      where: query,
       orderBy: (transactions, { desc }) => [desc(transactions.timestamp)],
     });
 
@@ -229,6 +237,129 @@ export const userService = {
         return {
           ...updatedTransaction,
           amount: updatedTransaction.amount / 100,
+          balance: newBalance / 100,
+        };
+      });
+    } finally {
+      mutex.release();
+    }
+  },
+
+  async softDeleteTransaction(transactionId: string) {
+    const existingTransaction = await db.query.transactions.findFirst({
+      where: eq(transactions.id, transactionId),
+    });
+
+    if (!existingTransaction) {
+      throw new Error("Transaction not found");
+    }
+
+    const userId = existingTransaction.userId;
+    const mutex = getUserMutex(userId);
+    await mutex.acquire();
+
+    try {
+      return await db.transaction(async (tx) => {
+        const user = await tx.query.users.findFirst({
+          where: eq(users.id, userId),
+          for: "update" as never,
+        });
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        let balanceAdjustment = 0;
+
+        if (existingTransaction.type === "deposit") {
+          balanceAdjustment = -existingTransaction.amount;
+        } else {
+          balanceAdjustment = existingTransaction.amount;
+        }
+
+        const newBalance = user.balance + balanceAdjustment;
+
+        await tx
+          .update(users)
+          .set({ balance: newBalance, updatedAt: sql`(strftime('%s', 'now'))` })
+          .where(eq(users.id, userId));
+
+        const [deletedTransaction] = await tx
+          .update(transactions)
+          .set({
+            deleted: true,
+          })
+          .where(eq(transactions.id, transactionId))
+          .returning();
+
+        return {
+          ...deletedTransaction,
+          amount: deletedTransaction.amount / 100,
+          balance: newBalance / 100,
+        };
+      });
+    } finally {
+      mutex.release();
+    }
+  },
+
+  async restoreTransaction(transactionId: string) {
+    const existingTransaction = await db.query.transactions.findFirst({
+      where: and(
+        eq(transactions.id, transactionId),
+        eq(transactions.deleted, true)
+      ),
+    });
+
+    if (!existingTransaction) {
+      throw new Error("Transaction not found or not deleted");
+    }
+
+    const userId = existingTransaction.userId;
+    const mutex = getUserMutex(userId);
+    await mutex.acquire();
+
+    try {
+      return await db.transaction(async (tx) => {
+        const user = await tx.query.users.findFirst({
+          where: eq(users.id, userId),
+          for: "update" as never,
+        });
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        let balanceAdjustment = 0;
+
+        if (existingTransaction.type === "deposit") {
+          balanceAdjustment = existingTransaction.amount;
+        } else {
+          balanceAdjustment = -existingTransaction.amount;
+        }
+
+        const newBalance = user.balance + balanceAdjustment;
+
+        if (newBalance < 0) {
+          throw new Error("Insufficient funds to restore this withdrawal");
+        }
+
+        await tx
+          .update(users)
+          .set({ balance: newBalance, updatedAt: sql`(strftime('%s', 'now'))` })
+          .where(eq(users.id, userId));
+
+        const [restoredTransaction] = await tx
+          .update(transactions)
+          .set({
+            deleted: false,
+          })
+          .where(eq(transactions.id, transactionId))
+          .returning();
+
+        return {
+          ...restoredTransaction,
+          amount: restoredTransaction.amount / 100,
           balance: newBalance / 100,
         };
       });

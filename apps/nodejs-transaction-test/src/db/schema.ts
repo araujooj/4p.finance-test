@@ -28,4 +28,5 @@ export const transactions = sqliteTable("transactions", {
   timestamp: integer("timestamp", { mode: "timestamp" }).default(
     sql`(strftime('%s', 'now'))`
   ),
+  deleted: integer("deleted", { mode: "boolean" }).default(false).notNull(),
 });

@@ -36,7 +36,16 @@ export function TransactionDialog({
   onSuccess,
 }: TransactionDialogProps) {
   const [type, setType] = React.useState<"deposit" | "withdrawal">(initialType);
-  const [value, setValue] = React.useState(formatAsCurrency(initialValue));
+  const [value, setValue] = React.useState(() => {
+    if (mode === "edit") {
+      const numericValue = parseFloat(initialValue);
+      return numericValue.toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+    return initialValue;
+  });
   const [error, setError] = React.useState<string | null>(null);
   const translateType = type === "deposit" ? "entrada" : "saída";
   const dialogCloseRef = React.useRef<HTMLButtonElement>(null);
@@ -83,7 +92,10 @@ export function TransactionDialog({
       closeDialog();
     },
     onError: (error) => {
-      toast.error(`Erro ao adicionar ${translateType}: ${error.message}`);
+      toast.error(
+        `Erro ao processar a transação. Verifique o saldo disponível.`
+      );
+      console.error(error.message);
       setError("Erro ao processar a transação. Verifique o saldo disponível.");
     },
   });
@@ -111,7 +123,8 @@ export function TransactionDialog({
       closeDialog();
     },
     onError: (error) => {
-      toast.error(`Erro ao atualizar transação: ${error.message}`);
+      toast.error(`Erro ao atualizar. Verifique o saldo disponível.`);
+      console.error(error.message);
       setError("Erro ao atualizar. Verifique os dados ou o saldo disponível.");
     },
   });
@@ -166,14 +179,26 @@ export function TransactionDialog({
         </DialogHeader>
         <div className="flex flex-col gap-4 py-2">
           <div className="relative text-2xl font-normal text-neutral-50 text-left mt-3">
-            <span className="absolute left-0">R$</span>
             <input
               type="text"
               value={value}
               onChange={handleValueChange}
-              className="w-full bg-transparent border-none outline-none pl-8 focus:ring-0"
+              className="w-full bg-transparent border-none outline-none focus:ring-0"
               placeholder="0,00"
               disabled={isLoading}
+              onFocus={(e) => {
+                const end = e.target.value.length;
+                e.target.setSelectionRange(end, end);
+                setTimeout(() => {
+                  e.target.setSelectionRange(end, end);
+                }, 1);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isLoading) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
             />
           </div>
 

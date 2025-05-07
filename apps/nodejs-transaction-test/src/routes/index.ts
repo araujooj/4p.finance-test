@@ -113,7 +113,11 @@ userRouter.post("/:userId/withdraw", (async (req, res) => {
 // Get Statement
 userRouter.get("/:userId/statement", (async (req, res) => {
   try {
-    const statement = await userService.getStatement(req.params.userId);
+    const includeDeleted = req.query.includeDeleted === "true";
+    const statement = await userService.getStatement(
+      req.params.userId,
+      includeDeleted
+    );
     res.json(statement);
   } catch (error: any) {
     if (error.message === "User not found") {
@@ -160,5 +164,48 @@ userRouter.put("/transactions/:transactionId", (async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to update transaction", error: error.message });
+  }
+}) as RequestHandler);
+
+// Soft Delete Transaction
+userRouter.delete("/transactions/:transactionId", (async (req, res) => {
+  try {
+    const result = await userService.softDeleteTransaction(
+      req.params.transactionId
+    );
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === "Transaction not found") {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === "User not found") {
+      return res.status(400).json({ message: error.message });
+    }
+    res
+      .status(500)
+      .json({ message: "Failed to delete transaction", error: error.message });
+  }
+}) as RequestHandler);
+
+// Restore Transaction
+userRouter.post("/transactions/:transactionId/restore", (async (req, res) => {
+  try {
+    const result = await userService.restoreTransaction(
+      req.params.transactionId
+    );
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === "Transaction not found or not deleted") {
+      return res.status(404).json({ message: error.message });
+    }
+    if (
+      error.message === "User not found" ||
+      error.message === "Insufficient funds to restore this withdrawal"
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+    res
+      .status(500)
+      .json({ message: "Failed to restore transaction", error: error.message });
   }
 }) as RequestHandler);

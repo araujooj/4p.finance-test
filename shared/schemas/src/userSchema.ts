@@ -27,6 +27,7 @@ export const transactionSchema = z.object({
   amount: z.number().positive(),
   description: z.string().nullable(),
   timestamp: z.string().datetime(),
+  deleted: z.boolean().optional().default(false),
 });
 
 export const statementSchema = z.object({

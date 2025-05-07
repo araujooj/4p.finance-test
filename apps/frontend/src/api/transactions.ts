@@ -9,8 +9,15 @@ import {
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-export async function getTransactions(userId: string): Promise<Statement> {
-  const response = await ky.get(`${API_URL}/users/${userId}/statement`).json();
+export async function getTransactions(
+  userId: string,
+  includeDeleted: boolean = false
+): Promise<Statement> {
+  const response = await ky
+    .get(
+      `${API_URL}/users/${userId}/statement?includeDeleted=${includeDeleted}`
+    )
+    .json();
   return statementSchema.parse(response);
 }
 
@@ -54,5 +61,19 @@ export async function updateTransaction(
     })
     .json();
 
+  return response;
+}
+
+export async function deleteTransaction(transactionId: string) {
+  const response = await ky
+    .delete(`${API_URL}/users/transactions/${transactionId}`)
+    .json();
+  return response;
+}
+
+export async function restoreTransaction(transactionId: string) {
+  const response = await ky
+    .post(`${API_URL}/users/transactions/${transactionId}/restore`)
+    .json();
   return response;
 }
